@@ -8,6 +8,7 @@ CML_IPF_PCM_DIF <- function(data,
                             epsilon=0.0001 ,
                             return_tab = TRUE) {
   data <- as.matrix(data)
+  group <- as.vector(group)
   if(is.na(x)){
     m <- max(data)
     x <- seq(1,m)}
