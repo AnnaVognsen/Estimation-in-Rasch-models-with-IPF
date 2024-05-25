@@ -7,7 +7,7 @@ CML_IPF_PCM_DIF <- function(data,
                             maxiter=1000, 
                             epsilon=0.0001 ,
                             return_tab = TRUE) {
-
+  data <- as.matrix(data)
   if(is.na(x)){
     m <- max(data)
     x <- seq(1,m)}
