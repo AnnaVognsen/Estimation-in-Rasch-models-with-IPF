@@ -4,12 +4,17 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
                         epsilon=0.0001,
                         return_tab = TRUE) {
   data <- as.matrix(data)
+  group <- as.vector(group)
+
+  # Remove Na groups and extreme total scores
   if (any(is.na(group))){warning("NA groups and observations removed")}
   ind <- !(rowSums(data)==0|rowSums(data)==max(rowSums(data))|is.na(group))
   data <- data[ind,]
   Levels <- names(table(group))
   X <- 0:(length(Levels)-1)
   group <- as.integer(factor(group[ind]))-1
+
+  # Data manipulation to get sufficient sums
   data_temp <- data[,-items_dif]
   nam <- (1:ncol(data))[-items_dif]
   colnames <- dimnames(data)[[2]]
@@ -24,6 +29,8 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
       
     }
   }
+
+  # Par_indicator makes sure each group have seperate item difficulties
   par_indicator <- matrix(ncol=length(X), nrow=ncol(data_temp))
   for(i in 1:ncol(data_temp)){
     for (x in X){
@@ -45,21 +52,14 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
   r <- as.integer(names(n_r_simp)) # Score in each scoregroup 
   n_r <- table(r_sums_x[,1],r_sums_x[,2])
   n_item <- ncol(data_temp)
-  # target table margins 
-  
+
+  # Observed sufficient sums 
   W <- colSums(data_temp,na.rm=TRUE)          
   V <- n_r_simp*r 
-  # number of columns 
+  
   n_score <- length(r) 
-  prod1 <- function(par) {
-    if(prod(par)==1){par}
-    else {
-      geometric_mean <- exp(mean(log(par)))
-      par <- par / geometric_mean
-      par
-      
-    }
-  }
+
+  # Restrict item difficulties such that they sum to 0 
   
   prod1_DIF <- function(par) {
     par0 <- par[!duplicated(nam)]
@@ -71,7 +71,8 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
       
     }
   }
-  
+
+  # gamma function
   sum_prod <- function(r,delta){
     temp <- combn(delta,r,FUN=prod)
     sum(temp)
@@ -90,7 +91,9 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
     prod1_DIF(beta_upt)
     
   }
-  
+
+
+  # Expected table entries
   e_ri_1 <- function(delta,r,i) {
     col <- as.integer(rownames(n_r)) == r
     if(nam[i] %in% items_dif){
@@ -115,7 +118,7 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
     
   
 
-
+# Expected sufficient sums
   c_hat_k_1 <- function(beta,f){
     n <- length(r)
     n_beta <- n_item
@@ -134,7 +137,8 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
   delta <- rep(1,n_item)
   names(delta) <- nam
   C <- c_hat_k_1(delta,e_ri_1)
-  
+
+  #Expected contingency table 
   mat_fun <- function(beta){
     mat <- matrix(ncol=n_item, nrow=n_score)
     n <- length(r)
@@ -165,7 +169,7 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
     delta <- update_beta(delta,W/C)
     C <- c_hat_k_1(delta,e_ri_1)
   }
- 
+ # getting estimated parameters
   par <- delta[!duplicated(nam)]
   par_star <- delta[!(delta%in% par)]
   beta <- par[names(par)==items_dif]/par_star
@@ -191,23 +195,7 @@ CML_IPF_DIF <- function(data,items_dif,group,parinit=NA,
 }
 
 
-Test_IPF <- function(obj, method = "LRT"){
-  x <- as.matrix(obj$data_tab)
-  n <- c(x)
-  m <- as.vector(obj$table[-nrow(obj$table),-ncol(obj$table)])
-  df <- (ncol(x)-2)*(nrow(x)-1)
-  if(method=="LRT"){
-    test_size <- 2*sum(n*log(n/m),na.rm=TRUE)
-    p <- pchisq(test_size,df,lower.tail = FALSE)
-  }
-  
-  if(method=="Pearson"){
-    test_size <- sum(((abs(n-m))**2)/m,na.rm=TRUE)
-    p<- pchisq(test_size,df,lower.tail = FALSE)
-  }
-  list("method" = method,"test_size" = test_size, "p_value" = p, "df"=df)
-}
-
+# Generic print function
 print.DIF_RM <- function(list){
   
   mat <- list$table
@@ -221,7 +209,6 @@ print.DIF_RM <- function(list){
   no_dif <- rep(NaN, n_item)
   nam <- c("alpha")
   tab <-cbind(list$delta)
-  Test <- Test_IPF(list, method="Pearson")
   for (i in item_dif){
     for(x in 1:length(X[-1])){
       temp <- no_dif
@@ -235,7 +222,6 @@ print.DIF_RM <- function(list){
       "Iterative proportional fitting Rasch model with DIF:\n Estimates and table \n Item difficulty parameters and DIF parameters \n" )
   print(tab)
   cat("Levels:",list$Levels, "\nIntercept level is ",list$Levels[1])
-  cat("\nGoodness of fit: Chi-squared test\n Method:",Test$method, "\nTest size:" ,Test$test_size, " p-value:", Test$p_value, "df:", Test$df)
   cat("\nTable:\n")
   print(mat)
   cat("\n Row target: ",list$V,
@@ -280,7 +266,7 @@ Std_error_DIF<- function(obj, data, X, B=1000){
                  "B" = B), class = "IPF_rasch_CI_DIF")
 }
 
-
+#generic print function for standard errors 
 
 print.IPF_rasch_CI_DIF <- function(list){
   cat(" \n",
@@ -299,7 +285,7 @@ print.IPF_rasch_CI_DIF <- function(list){
   cat("\n Repititions:" ,list$B)
 }
 
-
+# autoplot function 
 
 autoplot.IPF_rasch_CI_DIF<- function(obj, grid=FALSE) {
   n <- length(obj$delta) 
