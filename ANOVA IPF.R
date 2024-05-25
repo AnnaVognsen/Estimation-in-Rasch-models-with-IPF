@@ -1,7 +1,9 @@
-
+# function for calculating likelihood ratio test and p-values 
+# obj1 is the null model 
+# obj2 is the alternative model 
 anova_IPF <- function(obj1,obj2){
   if(class(obj1)== "Rasch_IPF_Estimation" & class(obj2) == "DIF_RM"){
-    # code
+    # Anova for DIF in dichotomous rasch model 
     
     delta_1 <- exp(-obj1$delta[obj2$nam])
     
@@ -18,6 +20,7 @@ anova_IPF <- function(obj1,obj2){
   }
   
   else if (class(obj1)== "Rasch_IPF_Estimation" & class(obj2) == "LD_RM"){
+    # Anova for dichotomous rasch model with local dependence 
     delta_1 <- exp(-obj1$delta[obj2$nam])
     names(delta_1) <- obj2$nam
     tab1 <- obj2$mat_fun(delta_1)
@@ -34,6 +37,7 @@ anova_IPF <- function(obj1,obj2){
   
   
   else if(class(obj1)== "RACH_PCM_IPF" & class(obj2) == "RACH_PCM_IPF_DIF") {
+    # Anova for polytomous Rasch with DIF 
     delta1 <- c()
     for(i in 1:length(obj2$X_indicator)){
       
