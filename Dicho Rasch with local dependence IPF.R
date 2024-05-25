@@ -8,7 +8,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
                          epsilon=0.0001,
                          return_tab = TRUE) {
     if (length(items_LD)>2) {stop("only 2 locally dependent items aloud")}
-    
+    data <- as.matrix(data)
     ind <- !(rowSums(data)==0|rowSums(data)==ncol(data))) # removing extreme total scores
     data <- data[ind,]
     interceptLD <- items_LD[1] # first dependent item is intercept 
