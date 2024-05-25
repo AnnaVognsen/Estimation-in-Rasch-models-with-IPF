@@ -3,7 +3,7 @@
 
 
 
-
+# Joint maximum likelihood estimation 
 
 ipf_JML <- function(data,parinit=NA, 
                     iter=100, 
@@ -12,7 +12,7 @@ ipf_JML <- function(data,parinit=NA,
   
   n_pers <- nrow(data)
 
-  # target table margins 
+  # observed table margins 
   V <- rowSums(data) # row sums 
   W <- colSums(data) # columns sums
 
@@ -81,7 +81,7 @@ ipf_JML <- function(data,parinit=NA,
     mat
     }
   
-  
+  # Resrict item difficulties to have product 1. 
  
   prod1 <- function(par) {
     if(prod(par)==1){cbind(par,1)}
@@ -94,12 +94,11 @@ ipf_JML <- function(data,parinit=NA,
   }
 
   for (t in 1:iter){
-    #browser()
-    #Opdater person parameter
+    #Update person parameter
     
     xi <- (V/R)*xi
    
-     #Genberegner forventede responser
+     # Expected column sums 
     C <- c_pij(xi*temp[1,2],delta,p_ij)
     
     temp <- prod1(c(W/C)*delta)
@@ -107,7 +106,7 @@ ipf_JML <- function(data,parinit=NA,
 
     delta <- temp[,1]
 
-    # Nye forventede responser 
+    # Expected rowsums  
     R <- r_pij(xi*temp[1,2],delta,p_ij)
     
 
@@ -120,6 +119,7 @@ ipf_JML <- function(data,parinit=NA,
 }
 
 
+# Joing maximum likelihood estimation where persons are grouped. 
 
 JML_IFP <- function(data,parinit=NA, 
                     maxiter=1000,
@@ -160,6 +160,8 @@ JML_IFP <- function(data,parinit=NA,
   e_rj <- function(xi,delta,nr) {
     nr/(1+xi*delta)
   }
+
+  # restriction of item difficulties
   prod1 <- function(par) {
     if(prod(par)==1){cbind(par,1)}
     else {
@@ -225,6 +227,7 @@ JML_IFP <- function(data,parinit=NA,
   
 }
 
+# Conditional maximum likelihood estimation 
 
 CML_IPF <- function(data,parinit=NA, 
                     maxiter=1000, 
@@ -241,7 +244,8 @@ CML_IPF <- function(data,parinit=NA,
   V <- n_r*r 
   n_item <- ncol(data) # number of columns 
   n_score <- length(n_r) 
-  
+
+  # Restriction of item difficulties. 
   prod1 <- function(par) {
     if(prod(par)==1){cbind(par,1)}
     else {
@@ -251,6 +255,8 @@ CML_IPF <- function(data,parinit=NA,
       
     }
   }
+
+  # Gamma function
   sum_prod <- function(r,delta){
     temp <- combn(delta,r,FUN=prod)
     sum(temp)
@@ -265,7 +271,7 @@ CML_IPF <- function(data,parinit=NA,
   }
   
   
-  
+  # expected column sum and entries
   e_ri_1 <- function(delta,nr,r,i,k=n_item) {
     nr*(gamma_fun(r-1,delta[-i],k)/gamma_fun(r,delta,k))
   }
@@ -289,8 +295,10 @@ CML_IPF <- function(data,parinit=NA,
   # Running algorithm 
   
 
-  delta <- rep(1,n_item)
+  delta <- rep(1,n_item) # initial parameters 
   C <- c_hat_k_1(delta,e_ri_1)
+
+  # expected table 
   mat_fun <- function(delta){
     mat <- matrix(ncol=n_item, nrow=n_score)
     
@@ -304,7 +312,6 @@ CML_IPF <- function(data,parinit=NA,
     mat <- rbind(mat,colSums(mat))
     mat
   }
-  i <- 0 
   
   for (t in 1:maxiter){
     if (is.na(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)))
@@ -316,7 +323,6 @@ CML_IPF <- function(data,parinit=NA,
       break
       }
     
-    i <- i+1
     delta <- prod1(W/C*delta)[,1]
     C <- c_hat_k_1(delta,e_ri_1)
   }
@@ -325,7 +331,7 @@ CML_IPF <- function(data,parinit=NA,
        "V" = V,
        "W" = W,
        "data" =data,
-       "i"= i, 
+       "i"= t, 
        "eps" = epsilon, 
        "table" = mat_fun(delta))
   
@@ -333,6 +339,7 @@ CML_IPF <- function(data,parinit=NA,
 
 
 
+# Wrapper function 
 Rasch_IPF<- function(data,
                      method="CML", 
                      parinit=NA, 
@@ -363,7 +370,7 @@ Rasch_IPF<- function(data,
   
 }
 
-
+# Print funciton for dichotomous rasch model estimation 
 print.Rasch_IPF_Estimation <- function(list){
   mat <- list$table
   dimnames(mat) <- list(c(list$r,"C"),c(names(list$delta),"R"))
