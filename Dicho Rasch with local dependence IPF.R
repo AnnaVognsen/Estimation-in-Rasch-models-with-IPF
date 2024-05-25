@@ -8,14 +8,17 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
                          epsilon=0.0001,
                          return_tab = TRUE) {
     if (length(items_LD)>2) {stop("only 2 locally dependent items aloud")}
-    ind <- !(rowSums(data)==0|rowSums(data)==max(rowSums(data)))
-    data <- data[ind,]
-    interceptLD <- items_LD[1]
-    Levels <- names(table(data[,interceptLD]))
-    X <- 0:(length(Levels)-1)
-    group <- data[,interceptLD]
-    i_dep <- items_LD[2]
     
+    ind <- !(rowSums(data)==0|rowSums(data)==ncol(data))) # removing extreme total scores
+    data <- data[ind,]
+    interceptLD <- items_LD[1] # first dependent item is intercept 
+    Levels <- names(table(data[,interceptLD]))
+    X <- 0:(length(Levels)-1) # values first item can take
+    group <- data[,interceptLD]
+    i_dep <- items_LD[2] 
+
+
+  #Data manipulations to get sufficient sums 
     data_temp <- data[,-i_dep]
     nam <- (1:ncol(data))[-i_dep]
     colnames <- dimnames(data)[[2]]
@@ -30,12 +33,17 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
         
       }
     }
+
+  # Parameter indicator for making sure those with y_i=1 fase one set of item difficulties and y_i=0 fase others. 
+  
     par_indicator <- matrix(ncol=length(X), nrow=ncol(data_temp))
     for(i in 1:ncol(data_temp)){
       for (x in X){
         par_indicator[i,x+1] <- !(any(nam[i] == i_dep) & X_indicator[i]!=x)
       }
     }
+
+  # Observed contigency table 
     tab1 <- cbind(data_temp, Rowtotal = rowSums(data_temp, na.rm=TRUE))
     # Aggregate by the Rowtotal column
     grouped_data1 <- aggregate(tab1,FUN=function(x){sum(x,na.rm=TRUE)}, by=list(rowSums(data_temp, na.rm=TRUE)))
@@ -45,15 +53,17 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
     n_r <- table(r_sums)
     r <- as.integer(names(n_r)) # Score in each scoregroup 
     n_item <- ncol(data_temp)
+
+)
     
-    
-    r_sums_x <- cbind(r_sums,group)
-    n_r_01 <- table(r_sums_x[,1],r_sums_x[,2])
-    # target table margins 
+  # target table margins 
     W <- colSums(data_temp,na.rm=TRUE)          
     V <- n_r*r 
-    # number of columns 
+    
+  # number of rows 
     n_score <- length(r) 
+
+  # Restriction of item difficulties 
     prod1<- function(par) {
       par0 <- par[!duplicated(nam)]
       if(prod(par0)==1){par}
@@ -66,7 +76,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
     }
     
 
-    
+    # gamma function
     sum_prod <- function(r,delta){
       temp <- combn(delta,r,FUN=prod)
       sum(temp)
@@ -100,7 +110,8 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
       prod1(beta_upt)
       
     }
-    
+
+  #expected entries 
     e_ri_1 <- function(delta,r,i) {
       
       if(nam[i] %in% i_dep){
@@ -138,7 +149,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
     
     
     
-    
+    # Expected column sums
     c_hat_k_1 <- function(beta,f){
       n <- length(r)
       n_beta <- n_item
@@ -157,7 +168,8 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
     delta <- rep(1,n_item)
     names(delta) <- nam
     C <- c_hat_k_1(delta,e_ri_1)
-    
+
+  #Expected contingency table
     mat_fun <- function(beta){
       mat <- matrix(ncol=n_item, nrow=n_score)
       n <- length(r)
@@ -188,6 +200,8 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
       delta <- update_beta(delta,W/C)
       C <- c_hat_k_1(delta,e_ri_1)
     }
+
+  # getting parameters 
     par <- delta[!duplicated(nam)]
     par_star <- delta[!(delta%in% par)]
     beta <- par[names(par)==i_dep]/par_star
@@ -211,6 +225,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
     
 }
 
+# A generic print function
 print.LD_RM <- function(list){
   mat <- if(is.matrix(list$table)){list$table} else{"Not calculated"}
   dimnames(mat) <- list(c(list$r,"C"),c(names(list$delta),names(list$zeta),"R"))
@@ -240,9 +255,9 @@ print.LD_RM <- function(list){
 
 
 
+#Bootstrapping standard error and confidence intervals for parameters
 
 Std_error_LD<- function(obj, data, X, B=1000){
-  #browser()
   delta <- obj$delta
   zeta <- obj$zeta
   item <- obj$itemDEP
@@ -271,7 +286,7 @@ Std_error_LD<- function(obj, data, X, B=1000){
                  "B" = B), class = "IPF_rasch_CI_LD")
 }
 
-
+# Generic print functions
 print.IPF_rasch_CI_LD <- function(list){
   cat(" \n",
       "Iterative proportional fitting dichotomous Rasch model with local dependence:\n Estimates and confidence intervals with method bootstrap \n") 
@@ -290,7 +305,7 @@ print.IPF_rasch_CI_LD <- function(list){
 }
 
 
-
+# Autoplot
 autoplot.IPF_rasch_CI_LD<- function(obj, grid=FALSE) {
   n <- length(obj$delta) 
   n_zeta <- length(obj$zeta)
