@@ -188,7 +188,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
       mat
     }
     for (t in 1:maxiter){
-      if (is.na(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)))
+      if (is.na(sum((C - W)^2) < epsilon ))
       {warning("Model failure")
         delta <- rep(NA,n_item)
         break    }
