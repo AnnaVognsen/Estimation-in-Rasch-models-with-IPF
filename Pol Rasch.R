@@ -126,7 +126,7 @@ CML_IPF_PCM <- function(data,
       beta <- matrix(rep(NA,m*n_item),ncol=m,nrow=n_item)
       break    
       }
-    if(sum((C - W)^2) <= epsilon ){
+    if(sum((C - W)^2) < epsilon ){
       
       break
     }
