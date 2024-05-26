@@ -203,8 +203,8 @@ JML_IFP <- function(data,parinit=NA,
   
   for (t in 1:maxiter){
 
-    if(sum((R - V)^2) <= epsilon * (sum(V^2) + epsilon)& 
-       sum((C - W)^2) <= epsilon * (sum(W^2))){break}
+    if(sum((R - V)^2) < epsilon & 
+       sum((C - W)^2) < epsilon ){break}
     xi <- c(V/R)*xi
  
     C <- c_hat_k(xi*temp[1,2],delta, e_rj)
@@ -314,11 +314,11 @@ CML_IPF <- function(data,parinit=NA,
   }
   
   for (t in 1:maxiter){
-    if (is.na(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)))
+    if (is.na(sum((C - W)^2) < epsilon ))
       {warning("Model failure")
        delta <- rep(NA,n_item)
        break    }
-    if(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)){
+    if(sum((C - W)^2) < epsilon ){
   
       break
       }
