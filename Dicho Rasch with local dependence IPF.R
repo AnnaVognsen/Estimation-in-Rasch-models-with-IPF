@@ -192,7 +192,7 @@ CML_IPF_LD <- function(data,items_LD,parinit=NA,
       {warning("Model failure")
         delta <- rep(NA,n_item)
         break    }
-      if(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)){
+      if(sum((C - W)^2) <= epsilon){
         
         break
       }
