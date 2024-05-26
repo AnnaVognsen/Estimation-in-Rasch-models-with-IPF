@@ -204,12 +204,12 @@ CML_IPF_PCM_DIF <- function(data,
     mat
   }
   for (t in 1:maxiter){
-    if (is.na(sum((C - W)^2) <= epsilon * (sum(W^2) + epsilon)))
+    if (is.na(sum((C - W)^2) < epsilon ))
     {warning("Model failure")
       beta <- rep(rep(NA,ncol(data_temp)),ncol=m)
       break    
     }
-    if(sum((C - W)^2) <= epsilon ){
+    if(sum((C - W)^2) < epsilon ){
       
       break
     }
